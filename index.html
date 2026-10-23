@@ -59,12 +59,38 @@
             return false;
         });
 
-        // ... (resto del código) ...
-
+        // escuchar evento del servidor
         socket.on('Evento-Mensaje-Server', function(msg){
             var msgJson = JSON.parse(msg);
-            var mensajeDisplay = "<b style='color:"+ msgJson.color +"'>" + msgJson.nombre + "</b>: " + msgJson.mensaje;
-            $('#messages').append($('<li>').html(mensajeDisplay));
+            var li = document.createElement('li');
+            var nameSpan = document.createElement('b');
+            nameSpan.style.color = msgJson.color;
+            nameSpan.textContent = msgJson.nombre;
+            li.appendChild(nameSpan);
+            li.appendChild(document.createTextNode(': '));
+
+            var imgMatch = msgJson.mensaje.match(/^<img src="([^"]+)"[^>]*>$/);
+            var iframeMatch = msgJson.mensaje.match(/^<iframe[^>]+src="(https:\/\/www\.youtube\.com\/embed\/[^"]+)"[^>]*><\/iframe>$/);
+
+            if (imgMatch) {
+                var img = document.createElement('img');
+                img.src = imgMatch[1];
+                img.style.maxHeight = '400px';
+                img.style.maxWidth = '400px';
+                li.appendChild(img);
+            } else if (iframeMatch) {
+                var iframe = document.createElement('iframe');
+                iframe.width = '560';
+                iframe.height = '315';
+                iframe.src = iframeMatch[1];
+                iframe.frameBorder = '0';
+                iframe.allowFullscreen = true;
+                li.appendChild(iframe);
+            } else {
+                li.appendChild(document.createTextNode(msgJson.mensaje));
+            }
+
+            document.getElementById('messages').appendChild(li);
             window.scrollTo(0, document.body.scrollHeight);
         });
 

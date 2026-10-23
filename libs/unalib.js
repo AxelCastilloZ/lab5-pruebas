@@ -30,7 +30,7 @@ module.exports = {
 
       // validacion Regex
       try {
-        isValid = re.test(phone);
+        isValid = re.test(url);
       } catch (e) {
         console.log(e);
       } finally {
@@ -48,7 +48,7 @@ module.exports = {
 
       // validacion Regex
       try {
-        isValid = re.test(phone);
+        isValid = re.test(url);
       } catch (e) {
         console.log(e);
       } finally {
@@ -73,6 +73,23 @@ module.exports = {
       return tag;
     },
 
+    sanitize: function(text) {
+      if (!text || typeof text !== 'string') return '';
+      var sanitized = text;
+      sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+      sanitized = sanitized.replace(/<\/?script[^>]*>/gi, '');
+      sanitized = sanitized.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+      sanitized = sanitized.replace(/on\w+\s*=\s*[^\s>]*/gi, '');
+      sanitized = sanitized.replace(/<\s*iframe[^>]*>/gi, '');
+      sanitized = sanitized.replace(/<\s*\/\s*iframe>/gi, '');
+      sanitized = sanitized.replace(/<\s*object[^>]*>/gi, '');
+      sanitized = sanitized.replace(/<\s*embed[^>]*>/gi, '');
+      sanitized = sanitized.replace(/<\s*link[^>]*>/gi, '');
+      sanitized = sanitized.replace(/<\s*style[^>]*>[\s\S]*?<\s*\/\s*style>/gi, '');
+      sanitized = sanitized.replace(/javascript\s*:/gi, '');
+      return sanitized.trim();
+    },
+
     validateMessage: function(msg){
       // Handle invalid input
       if (!msg || typeof msg !== 'string') {
@@ -81,6 +98,10 @@ module.exports = {
 
       try {
         var obj = JSON.parse(msg);
+
+      // Sanitizar mensaje y nombre para prevenir XSS
+      obj.mensaje = this.sanitize(obj.mensaje);
+      obj.nombre = this.sanitize(obj.nombre);
 
       if(this.is_valid_url_image(obj.mensaje)){
         console.log("Es una imagen!")
@@ -97,7 +118,7 @@ module.exports = {
       return JSON.stringify(obj);
       } catch (e) {
         console.log('Error processing message:', e);
-        return JSON.stringify({ mensaje: msg }); // Return original message on error
+        return JSON.stringify({ mensaje: '' });
       }
     }
 
