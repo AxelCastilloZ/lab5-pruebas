@@ -8,7 +8,7 @@ describe('unalib', function(){
   describe('funcion is_valid_phone', function(){
 
     it('deberia devolver true para 8297-8547', function(){
-      assert.equal(val.is_valid_phone('8297-8547'), false);
+      assert.equal(val.is_valid_phone('8297-8547'), true);
     });
 
     it('deberia devolver false para 8297p-8547', function(){
