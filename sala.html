@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Sala - Chat Socket.IO UNA</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      #barra {
+        background: rgb(130, 224, 255);
+        padding: 8px 12px;
+        position: fixed; top: 0; width: 100%;
+        display: flex; align-items: center; justify-content: space-between;
+      }
+      #barra b { font-size: 14px; }
+      #barra a {
+        color: #000; text-decoration: none; background: #fff;
+        padding: 6px 10px; border-radius: 4px; font-weight: bold;
+      }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px;}
+      form button { width: 10%; background: rgb(130, 224, 255);  border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 40px 0 0 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+      #messages { margin-bottom: 40px }
+      #nombre, #m { display: inline-block;}
+      #m {width: 69%; margin-right: 4px;}
+      #nombre {width: 20%}
+    </style>
+  </head>
+  <body>
+    <div id="barra">
+      <span id="saludo">Sala de UNA Chat</span>
+      <a id="logout" href="/auth/logout" style="display:none">Cerrar sesion</a>
+    </div>
+    <ul id="messages"></ul>
+    <form action="">
+      <input id="nombre" autocomplete="off" placeholder="Username"/>
+      <input id="m" autocomplete="off" placeholder="Escriba un mensaje" /><button>Send</button>
+    </form>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+
+    var colorHexTxt = "";
+
+    // Muestra el nombre del usuario y el boton Cerrar sesion.
+    $.getJSON('/auth/me')
+      .done(function (data) {
+        if (data.enabled && data.user) {
+          $('#saludo').text('Hola, ' + data.user.name);
+          $('#logout').show();
+          if (data.user.name) { $('#nombre').val(data.user.name); }
+        } else if (!data.enabled) {
+          $('#saludo').text('Sala de UNA Chat (login deshabilitado)');
+        }
+      })
+      .fail(function (xhr) {
+        if (xhr.status === 401) { window.location.href = '/auth/login'; }
+      });
+
+    // genera colores aleatorios en hexadeximal
+    function getRandomColor() {
+        var letters = '0123456789ABCDEF';
+        var color = '#';
+        for (var i = 0; i < 6; i++) {
+          color += letters[Math.floor(Math.random() * 16)];
+        }
+
+        return color;
+     }
+
+      $(function () {
+        var socket = io();
+
+        // emite evento al servidor
+
+        $('form').submit(function(){
+            var nombreTxt = $('#nombre').val() || "Anomimo";
+            var mensajeTxt = $('#m').val();
+
+            if (colorHexTxt == "") {
+                colorHexTxt = getRandomColor();
+            }
+
+            var jsonMsg = { nombre: nombreTxt, mensaje: mensajeTxt, color: colorHexTxt };
+            socket.emit('Evento-Mensaje-Server', JSON.stringify(jsonMsg));
+            $('#m').val('');
+            return false;
+        });
+
+        // escuchar evento del servidor
+        socket.on('Evento-Mensaje-Server', function(msg){
+            var msgJson = JSON.parse(msg);
+            var li = document.createElement('li');
+            var nameSpan = document.createElement('b');
+            nameSpan.style.color = msgJson.color;
+            nameSpan.textContent = msgJson.nombre;
+            li.appendChild(nameSpan);
+            li.appendChild(document.createTextNode(': '));
+
+            var imgMatch = msgJson.mensaje.match(/^<img src="([^"]+)"[^>]*>$/);
+            var iframeMatch = msgJson.mensaje.match(/^<iframe[^>]+src="(https:\/\/www\.youtube\.com\/embed\/[^"]+)"[^>]*><\/iframe>$/);
+
+            if (imgMatch) {
+                var img = document.createElement('img');
+                img.src = imgMatch[1];
+                img.style.maxHeight = '400px';
+                img.style.maxWidth = '400px';
+                li.appendChild(img);
+            } else if (iframeMatch) {
+                var iframe = document.createElement('iframe');
+                iframe.width = '560';
+                iframe.height = '315';
+                iframe.src = iframeMatch[1];
+                iframe.frameBorder = '0';
+                iframe.allowFullscreen = true;
+                li.appendChild(iframe);
+            } else {
+                li.appendChild(document.createTextNode(msgJson.mensaje));
+            }
+
+            document.getElementById('messages').appendChild(li);
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+      });
+    </script>
+  </body>
+</html>

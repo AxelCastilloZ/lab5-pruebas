@@ -1,6 +1,10 @@
 node_modules/
 package-lock.json
 
+# Variables de entorno (secreto, contrasena y URI fuera de Git)
+.env
+.env.local
+
 # Playwright
 /test-results/
 /playwright-report/
